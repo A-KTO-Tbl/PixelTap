@@ -3,7 +3,7 @@ from threading import Thread, Lock
 from os import system as sys
 from platform import system as s_name
 from time import sleep
-from random import randint
+from random import randint, choice
 from colorama import Fore
 from typing import Literal
 from datetime import datetime, timedelta
@@ -35,9 +35,17 @@ class HPV_PixelTap:
     
     [4] - `Апгрейд всех роботов`
     
-    [5] - `Ожидание от 5 до 6 часов`
+    [5] - `Получение кол-ва доступных спинов и запуск их прокрутки`
     
-    [6] - `Повторение действий через 5-6 часов`
+    [6] - `Активация буста, если таковые имеются`
+    
+    [7] - `Апгрейд уровня профиля, если доступно`
+    
+    [8] - `Получение ежедневного комбо (рандомные карточки)`
+    
+    [9] - `Ожидание от 5 до 6 часов`
+    
+    [10] - `Повторение действий через 5-6 часов`
     '''
 
 
@@ -194,6 +202,134 @@ class HPV_PixelTap:
 
 
 
+    def Get_Info_Spin(self) -> int:
+        '''Получение информации о наличии спинов'''
+
+        URL = 'https://api-clicker.pixelverse.xyz/api/roulette'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            return get(URL, headers=Headers, proxies=self.Proxy).json()['mySpinsAmount']
+        except:
+            return 0
+
+
+
+    def Spin(self) -> dict:
+        '''Прокрутка всех доступных спинов'''
+
+        URL = 'https://api-clicker.pixelverse.xyz/api/roulette/spin'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            Prize = post(URL, headers=Headers, proxies=self.Proxy).json()['name'].split('.')[2]
+            self.Logging('Success', self.Name, '🟢', f'Вращение произведено! Получено: {Prize}')
+        except:
+            self.Logging('Error', self.Name, '🔴', 'Вращение не произведено!')
+
+
+
+    def Get_Boosts(self) -> dict:
+        '''Получение списка доступных бустов'''
+
+        URL = 'https://api-clicker.pixelverse.xyz/api/boost/my'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            HPV = get(URL, headers=Headers, proxies=self.Proxy).json()[0] # Первый буст из списка доступных
+
+            Boost_ID = HPV['id'] # ID буста
+            Boost_Name = HPV['boost']['name'].split('.') # Имя буста
+
+            return {'Status': True, 'Boost_ID': Boost_ID, 'Boost_Name': f'{Boost_Name[1]} {Boost_Name[2]}'}
+        except:
+            return {'Status': False}
+
+
+
+    def Boost_Activation(self, ID: str) -> bool:
+        '''Активация буста'''
+
+        URL = f'https://api-clicker.pixelverse.xyz/api/boost/{ID}/activate'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            return False if post(URL, headers=Headers, proxies=self.Proxy).content else True
+        except:
+            return False
+
+
+
+    def Check_Boost_Active(self) -> bool:
+        '''Проверка на наличие активного буста'''
+
+        URL = 'https://api-clicker.pixelverse.xyz/api/boost/my/active'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            get(URL, headers=Headers, proxies=self.Proxy).json()
+            return True
+        except:
+            return False
+
+
+
+    def Check_LVL_Upgrade(self) -> dict:
+        '''Проверка на доступность обновить уровень'''
+
+        URL = 'https://api-clicker.pixelverse.xyz/api/levels/my'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            HPV = get(URL, headers=Headers, proxies=self.Proxy).json()
+            
+            LVL = HPV['value'] # Текущий уровень
+            TASK = all(TASK['completed'] for TASK in HPV['tasksToLevelup']) # Если все задания выполнены = True, иначе = False
+
+            return {'Status': True, 'LVL': LVL, 'TASK': TASK}
+        except:
+            return {'Status': False}
+
+
+
+    def LVL_Upgrade(self) -> bool:
+        '''Обновление уровня'''
+
+        URL_START = 'https://api-clicker.pixelverse.xyz/api/levels/levelup/start'
+        URL_SKIP = 'https://api-clicker.pixelverse.xyz/api/levels/levelup/skip'
+        URL_FINISH = 'https://api-clicker.pixelverse.xyz/api/levels/levelup/finish'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+
+        try:
+            post(URL_START, headers=Headers, proxies=self.Proxy)
+            post(URL_SKIP, headers=Headers, proxies=self.Proxy)
+            HPV = post(URL_FINISH, headers=Headers, proxies=self.Proxy).json()['message']
+
+            return False if HPV == 'Levelup not available' else True
+        except:
+            return False
+
+
+
+    def Daily_Combo(self) -> dict:
+        '''Получение ежедневного комбо'''
+
+        PETS = ['50e9e942-36d5-4f19-9bb7-c892cb956fff', '7ee9ed52-c808-4187-a942-b53d972cd399', '8074e9c5-f6c2-4012-bfa2-bcc98ceb5175', 'f097634a-c8e8-4de9-b707-575d20c5fd88', 'd364254e-f22f-4a43-9a1c-5a7c71ea9ecd', '7c3a95c6-75a3-4c62-a20e-896a21132060', '0a6306e5-cc33-401a-9664-a872e3eb2b71', '341195b4-f7d8-4b9c-a8f1-448318f32e8e', 'bc3f938f-8f4c-467b-a57d-2b40cd500f4b', 'ef0adeca-be18-4503-9e9a-d93c22bd7a6e', '90a07a32-431a-4299-be59-598180ee4a8c', 'f82a3b59-913d-4c57-8ffd-9ac954105e2d', 'e8c505ed-df93-47e0-bd2e-0e664d09ba86', '45f2e16e-fb64-4e15-a3fa-2fb99c8d4a04', '571523ae-872d-49f0-aa71-53d4a41cd810']
+        URL = 'https://api-clicker.pixelverse.xyz/api/cypher-games/current'
+        Headers = {'accept': 'application/json, text/plain, */*', 'accept-language': 'ru,en;q=0.9,uz;q=0.8', 'content-type': 'application/json', 'initdata': self.Token, 'origin': 'https://sexyzbot.pxlvrs.io', 'priority': 'u=1, i', 'referer': 'https://sexyzbot.pxlvrs.io/', 'sec-fetch-dest': 'empty', 'sec-fetch-mode': 'cors', 'sec-fetch-site': 'cross-site', 'secret': self.Secret, 'tg-id': self.TG_ID, 'user-agent': self.UA, 'username': self.Username}
+        Json = {choice(PETS): 0, choice(PETS): 1, choice(PETS): 2, choice(PETS): 3}
+
+        try:
+            GAME_ID = get(URL, headers=Headers, proxies=self.Proxy).json()['id']
+            URL_GAME = f'https://api-clicker.pixelverse.xyz/api/cypher-games/{GAME_ID}/answer'
+            Prize = post(URL_GAME, headers=Headers, json=Json, proxies=self.Proxy).json()['rewardAmount']
+
+            return {'Status': True, 'Prize': f'{Prize:,}'}
+        except:
+            return {'Status': False}
+
+
+
     def Run(self):
         '''Активация бота'''
 
@@ -244,6 +380,38 @@ class HPV_PixelTap:
                                         Updates[Name] = True
                                 else:
                                     Updates[Name] = True
+
+
+                    # Получение кол-ва доступных спинов и запуск их прокрутки
+                    Get_Spins = self.Get_Info_Spin()
+                    if Get_Spins > 0:
+                        self.Logging('Success', self.Name, '🎮', f'Спинов доступно: {Get_Spins}!')
+                        for _ in range(Get_Spins):
+                            self.Spin()
+                            sleep(randint(12, 23))
+
+                        self.Logging('Success', self.Name, '💰', f'Баланс после спинов: {self.Get_Info()["Balance"]}')
+
+
+                    # Активация буста, если таковые имеются
+                    Get_Boosts = self.Get_Boosts()
+                    if Get_Boosts['Status']:
+                        if not self.Check_Boost_Active(): # Проверка на наличия отсутствия активных бустов
+                            if self.Boost_Activation(Get_Boosts['Boost_ID']):
+                                self.Logging('Success', self.Name, '⚡️', f'Буст `{Get_Boosts["Boost_Name"]}` активирован!')
+
+
+                    # Апгрейд уровня профиля
+                    C_LVL_U = self.Check_LVL_Upgrade()
+                    if C_LVL_U['Status'] and C_LVL_U['TASK']: # Если запрос успешен и все задания выполнены
+                        if self.LVL_Upgrade():
+                            self.Logging('Success', self.Name, '🚀', f'Апгрейд уровня профиля успешен! Текущий уровень: {C_LVL_U["LVL"] + 1}')
+
+
+                    # Получение ежедневного комбо
+                    Daily_Combo = self.Daily_Combo()
+                    if Daily_Combo['Status']:
+                        self.Logging('Success', self.Name, '🎁', f'Ежедневное комбо выполнено! Получено: {Daily_Combo["Prize"]}')
 
 
                     Waiting = randint(18_000, 21_000) # Значение времени в секундах для ожидания
